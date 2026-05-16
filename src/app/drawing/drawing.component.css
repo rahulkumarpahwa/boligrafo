@@ -1,0 +1,33 @@
+/* Responsive styles for the settings dropdown (hamburger menu) */
+.settings-panel {
+  width: 18.5rem;
+  box-sizing: border-box;
+  z-index: 9999;
+}
+
+/* On small screens make the panel full-width and pinned to top */
+@media (max-width: 640px) {
+  .settings-panel {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-height: 60vh !important;
+    overflow-y: auto;
+  }
+}
+
+/* On medium screens, constrain width and center */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .settings-panel {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+    max-width: 22rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+}

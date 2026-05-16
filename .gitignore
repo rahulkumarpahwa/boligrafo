@@ -46,3 +46,6 @@ Thumbs.db
 
 # txt files
 *.txt
+
+# shell script
+*.sh
