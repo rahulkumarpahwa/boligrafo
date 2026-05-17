@@ -52,21 +52,21 @@ export class DrawingComponent {
       key: 'pen1',
       label: 'Pen 1',
       icon: 'assets/pen1.svg',
-      accent: '#eb454a',
-      description: 'Smooth expressive stroke',
+      accent: '#0B72E7',
+      description: 'Smooth digital ink',
     },
     {
       key: 'pen2',
       label: 'Pen 2',
       icon: 'assets/pen2.svg',
-      accent: '#3b82f6',
-      description: 'Sharper controlled stroke',
+      accent: '#3B82F6',
+      description: 'Sharper blue stroke',
     },
     {
       key: 'highlighter',
       label: 'Highlighter',
       icon: 'assets/pen3.svg',
-      accent: '#ffb400',
+      accent: '#7C3AED',
       description: 'Soft translucent marker',
     },
     {
@@ -78,10 +78,19 @@ export class DrawingComponent {
     },
   ];
 
+  utilityActions = [
+    { icon: 'pi pi-upload', label: 'Upload', action: () => this.triggerUpload() },
+    { icon: 'pi pi-download', label: 'Export', action: () => this.saveSVG() },
+    { icon: 'pi pi-undo', label: 'Undo', action: () => this.undo(), disabled: () => this.allStrokes.length === 0 },
+    { icon: 'pi pi-refresh', label: 'Redo', action: () => this.redo(), disabled: () => this.redoStack.length === 0 },
+    { icon: 'pi pi-trash', label: 'Clear', action: () => this.clearCanvas() },
+    { icon: 'pi pi-send', label: 'Send', action: () => this.sendToProject() },
+  ];
+
   tools: any = {
-    pen1: getDefaultToolPen1('#eb454a', 16),
-    pen2: getDefaultToolPen2('#3b82f6', 16),
-    highlighter: getDefaultToolHighlighter('#ffeb3b', 30, 0.4),
+    pen1: getDefaultToolPen1('#0B72E7', 14),
+    pen2: getDefaultToolPen2('#2563eb', 16),
+    highlighter: getDefaultToolHighlighter('#7dd3fc', 26, 0.22),
     eraser: { size: 40 },
   };
 
@@ -113,26 +122,40 @@ export class DrawingComponent {
   }
 
   // ------------------- UTILITIES -----------------
-  showSettings: boolean = false; // Hamburger toggle
-
-  toggleSettings() {
-    this.showSettings = !this.showSettings;
-  }
+  showToolPanel = false;
 
   selectTool(tool: 'pen1' | 'pen2' | 'highlighter' | 'eraser') {
+    if (this.activeTool === tool && this.showToolPanel) {
+      this.showToolPanel = false;
+      return;
+    }
+
     this.activeTool = tool;
+    this.showToolPanel = true;
+  }
+
+  closeToolPanel() {
+    this.showToolPanel = false;
   }
 
   get activeToolMeta() {
     return this.toolOptions.find((tool) => tool.key === this.activeTool);
   }
 
+  get showContextNavbar() {
+    return this.showToolPanel && !!this.activeToolMeta;
+  }
+
+  get displayToolLabel() {
+    return this.activeTool === 'highlighter' ? 'Pen' : this.activeToolMeta?.label;
+  }
+
   resetPenSettings() {
     if (this.activeTool === 'eraser') return;
     const defaults = {
-      pen1: { color: '#eb454a', size: 16 },
-      pen2: { color: '#3b82f6', size: 16 },
-      highlighter: { color: '#ffeb3b', size: 30, opacity: 0.4 },
+      pen1: { color: '#0B72E7', size: 14 },
+      pen2: { color: '#2563eb', size: 16 },
+      highlighter: { color: '#7dd3fc', size: 26, opacity: 0.22 },
     };
     const d = (defaults as any)[this.activeTool];
     this.tools[this.activeTool] = getDefaultTool(
@@ -215,6 +238,7 @@ export class DrawingComponent {
   // ------------------Control Methods------------------
 
   onPointerDown(e: PointerEvent) {
+    if (!this.activeTool) return;
     if (this.activeTool === 'eraser') {
       this.erase(e);
       return;
@@ -228,6 +252,7 @@ export class DrawingComponent {
 
   onPointerMove(e: PointerEvent) {
     if (e.buttons !== 1) return;
+    if (!this.activeTool) return;
     if (this.activeTool === 'eraser') {
       this.erase(e);
       return;
