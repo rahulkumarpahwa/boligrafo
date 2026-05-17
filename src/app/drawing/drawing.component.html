@@ -1,311 +1,384 @@
-<div class="relative h-screen overflow-hidden bg-gray-100">
-  <div
-    class="absolute top-0 left-0 w-full z-10 flex flex-column align-items-center p-3 pointer-events-none"
-  >
-    <div class="absolute top-0 left-0 z-10 pointer-events-auto mb-2">
+<div class="drawing-shell">
+  <div class="top-chrome">
+    <button
+      pButton
+      type="button"
+      icon="pi pi-bars"
+      class="menu-toggle"
+      [ngClass]="{ 'menu-toggle-active': showSettings }"
+      (click)="toggleSettings()"
+      title="Open tools and properties"
+    ></button>
+
+    <div class="tool-dock" role="toolbar" aria-label="Drawing tools">
       <button
-        pButton
-        icon="pi pi-bars"
-        (click)="toggleSettings()"
-        [ngClass]="{ 'p-button-secondary': !showSettings }"
-        title="Toggle Settings"
-      ></button>
+        *ngFor="let tool of toolOptions"
+        type="button"
+        class="tool-chip"
+        [class.tool-chip-active]="activeTool === tool.key"
+        [style.--tool-accent]="tool.accent"
+        (click)="selectTool(tool.key)"
+        [attr.aria-pressed]="activeTool === tool.key"
+        [title]="tool.label"
+      >
+        <img [src]="tool.icon" [alt]="tool.label" class="tool-chip-icon" />
+      </button>
     </div>
 
-    <div
-      class="flex gap-2 bg-white shadow-4 border-round-xl p-2 pointer-events-auto align-items-center"
-    >
-      <button
-        pButton
-        icon="pi pi-upload"
-        (click)="triggerUpload()"
-        class="p-button-text p-button-plain"
-        title="Upload SVG"
-      ></button>
-
-      <div class="border-left-1 border-300 h-2rem mx-1"></div>
-
-      <button
-        pButton
-        icon="pi pi-pencil"
-        label="Pen 1"
-        [class.p-button-outlined]="activeTool !== 'pen1'"
-        (click)="activeTool = 'pen1'"
-      ></button>
-      <button
-        pButton
-        icon="pi pi-pencil"
-        label="Pen 2"
-        [class.p-button-outlined]="activeTool !== 'pen2'"
-        (click)="activeTool = 'pen2'"
-        class="p-button-secondary"
-      ></button>
-      <button
-        pButton
-        icon="pi pi-pencil"
-        label="Highlighter"
-        [class.p-button-outlined]="activeTool !== 'highlighter'"
-        (click)="activeTool = 'highlighter'"
-        class="p-button-help"
-      ></button>
-      <button
-        pButton
-        icon="pi pi-eraser"
-        label="Eraser"
-        [class.p-button-outlined]="activeTool !== 'eraser'"
-        (click)="activeTool = 'eraser'"
-        class="p-button-warning"
-      ></button>
-
-      <div class="border-left-1 border-300 h-2rem mx-2"></div>
-
-      <button
-        pButton
-        icon="pi pi-chevron-left"
-        (click)="undo()"
-        [disabled]="allStrokes.length === 0"
-        class="p-button-text p-button-plain"
-        title="Undo"
-      ></button>
-      <button
-        pButton
-        icon="pi pi-chevron-right"
-        (click)="redo()"
-        [disabled]="redoStack.length === 0"
-        class="p-button-text p-button-plain"
-        title="Redo"
-      ></button>
-
-      <div class="border-left-1 border-300 h-2rem mx-1"></div>
-
-      <button
-        pButton
-        icon="pi pi-download"
-        (click)="saveSVG()"
-        class="p-button-text p-button-plain"
-        title="Download SVG"
-      ></button>
-      <button
-        pButton
-        icon="pi pi-times"
-        (click)="clearCanvas()"
-        class="p-button-text p-button-danger"
-        title="Clear All"
-      ></button>
-
-      <button
-        pButton
-        icon="pi pi-file-export"
-        (click)="sendToProject()"
-        class="p-button-text p-button-danger"
-        title="Send To Project"
-      ></button>
-
-      <input
-        id="svgUpload"
-        type="file"
-        accept=".svg"
-        style="display: none"
-        (change)="handleFileUpload($event)"
-      />
-    </div>
-
-    <div
-      *ngIf="activeTool !== 'eraser' && showSettings"
-      class="settings-panel mt-6 shadow-4 text-sm bg-white border-round-lg p-3 mx-1 pointer-events-auto w-18.5rem absolute top-0 left-0"
-      style="max-height: 90vh"
-    >
-      <div class="flex justify-content-between align-items-center mb-3">
-        <span class="font-bold uppercase text-500"
-          >{{ activeTool }} Settings</span
-        >
-        <button
-          pButton
-          icon="pi pi-refresh"
-          label="Reset Pen"
-          class="p-button-xs p-button-text p-button-secondary"
-          (click)="resetPenSettings()"
-        ></button>
-      </div>
-
-      <div class="flex flex-column gap-3 mb-4">
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-expand"></i>
-          <label class="w-5rem">Size </label>
-          <input
-            type="range"
-            min="1"
-            max="100"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].size"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].size
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-percentage"></i>
-          <label class="w-5rem">Thinning</label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].thinning"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].thinning
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-wave-pulse"></i>
-          <label class="w-5rem">Streamline</label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].streamline"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].streamline
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-sparkles"></i>
-          <label class="w-5rem">Smoothing</label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].smoothing"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].smoothing
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-sort-alt"></i>
-          <label class="w-5rem">Easing</label>
-          <select
-            [(ngModel)]="tools[activeTool].easing"
-            class="flex-grow-1 p-1"
-          >
-            <option *ngFor="let opt of easingOptions" [value]="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <hr class="border-200" />
-
-      <div class="flex flex-column gap-3 my-4">
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-step-backward"></i>
-          <label class="w-5rem">Taper Start</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].start.taper"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].start.taper
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-sort-alt"></i>
-          <label class="w-5rem">Easing Start</label>
-          <select
-            [(ngModel)]="tools[activeTool].start.easing"
-            class="flex-grow-1 p-1"
-          >
-            <option *ngFor="let opt of easingOptions" [value]="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <hr class="border-200" />
-
-      <div class="flex flex-column gap-3 my-4">
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-step-forward"></i>
-          <label class="w-5rem">Taper End</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].end.taper"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].end.taper
-          }}</span>
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-sort-alt"></i>
-          <label class="w-5rem">Easing End</label>
-          <select
-            [(ngModel)]="tools[activeTool].end.easing"
-            class="flex-grow-1 p-1"
-          >
-            <option *ngFor="let opt of easingOptions" [value]="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <hr class="border-200" />
-
-      <div class="flex flex-column gap-3 mt-4">
-        <div class="flex align-items-center justify-content-between">
-          <i class="pi pi-palette"></i>
-          <label>Fill Color</label>
-          <input
-            type="color"
-            [(ngModel)]="tools[activeTool].color"
-            class="w-3rem h-2rem border-none cursor-pointer"
-          />
-        </div>
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-minus"></i>
-          <label class="w-5rem">Stroke</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            class="flex-grow-1"
-            [(ngModel)]="tools[activeTool].outline.width"
-          />
-          <span class="val w-2rem text-right">{{
-            tools[activeTool].outline.width
-          }}</span>
-        </div>
-        <div class="flex align-items-center justify-content-between">
-          <i class="pi pi-pencil"></i>
-          <label>Stroke Color</label>
-          <input
-            type="color"
-            [(ngModel)]="tools[activeTool].outline.color"
-            class="w-3rem h-2rem border-none cursor-pointer"
-          />
-        </div>
-      </div>
-    </div>
+    <div class="top-chrome-spacer"></div>
   </div>
+
+  <aside *ngIf="showSettings" class="settings-panel">
+    <div class="settings-header">
+      <div>
+        <p class="settings-eyebrow">Tool Controls</p>
+        <h2 class="settings-title">
+          {{ activeToolMeta?.label || 'Tool' }}
+        </h2>
+        <p class="settings-subtitle">
+          {{ activeToolMeta?.description }}
+        </p>
+      </div>
+
+      <button
+        pButton
+        type="button"
+        icon="pi pi-times"
+        class="p-button-rounded p-button-text close-settings"
+        (click)="toggleSettings()"
+        title="Close menu"
+      ></button>
+    </div>
+
+    <div class="settings-body">
+      <section class="settings-card">
+        <div class="card-heading">
+          <div>
+            <p class="card-eyebrow">Library</p>
+            <h3>Actions</h3>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-upload"
+            label="Upload"
+            class="action-button"
+            (click)="triggerUpload()"
+          ></button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-download"
+            label="Export"
+            class="action-button"
+            (click)="saveSVG()"
+          ></button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-undo"
+            label="Undo"
+            class="action-button"
+            [disabled]="allStrokes.length === 0"
+            (click)="undo()"
+          ></button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-refresh"
+            label="Redo"
+            class="action-button"
+            [disabled]="redoStack.length === 0"
+            (click)="redo()"
+          ></button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            label="Clear"
+            class="action-button action-button-danger"
+            (click)="clearCanvas()"
+          ></button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-send"
+            label="Send"
+            class="action-button action-button-accent"
+            (click)="sendToProject()"
+          ></button>
+        </div>
+
+        <input
+          id="svgUpload"
+          type="file"
+          accept=".svg"
+          style="display: none"
+          (change)="handleFileUpload($event)"
+        />
+      </section>
+
+      <section class="settings-card tool-preview-card">
+        <div class="tool-preview-row">
+          <div class="tool-preview-visual" [style.--tool-accent]="activeToolMeta?.accent">
+            <img
+              [src]="activeToolMeta?.icon"
+              [alt]="activeToolMeta?.label || 'Active tool'"
+              class="tool-preview-image"
+            />
+          </div>
+
+          <div class="tool-preview-copy">
+            <p class="card-eyebrow">Selected Tool</p>
+            <h3>{{ activeToolMeta?.label }}</h3>
+            <p>{{ activeToolMeta?.description }}</p>
+          </div>
+
+          <button
+            *ngIf="activeTool !== 'eraser'"
+            pButton
+            type="button"
+            label="Reset"
+            icon="pi pi-refresh"
+            class="p-button-sm reset-button"
+            (click)="resetPenSettings()"
+          ></button>
+        </div>
+      </section>
+
+      <ng-container *ngIf="activeTool !== 'eraser'; else eraserControls">
+        <section class="settings-card">
+          <div class="card-heading">
+            <div>
+              <p class="card-eyebrow">Stroke</p>
+              <h3>Core properties</h3>
+            </div>
+          </div>
+
+          <div class="control-stack">
+            <div class="control-row">
+              <div class="control-labels">
+                <label>Size</label>
+                <span>{{ tools[activeTool].size }}</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                [(ngModel)]="tools[activeTool].size"
+              />
+            </div>
+
+            <div class="control-row">
+              <div class="control-labels">
+                <label>Thinning</label>
+                <span>{{ tools[activeTool].thinning }}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                [(ngModel)]="tools[activeTool].thinning"
+              />
+            </div>
+
+            <div class="control-row">
+              <div class="control-labels">
+                <label>Streamline</label>
+                <span>{{ tools[activeTool].streamline }}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                [(ngModel)]="tools[activeTool].streamline"
+              />
+            </div>
+
+            <div class="control-row">
+              <div class="control-labels">
+                <label>Smoothing</label>
+                <span>{{ tools[activeTool].smoothing }}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                [(ngModel)]="tools[activeTool].smoothing"
+              />
+            </div>
+
+            <div class="select-row">
+              <div class="control-labels">
+                <label>Main easing</label>
+              </div>
+              <select [(ngModel)]="tools[activeTool].easing">
+                <option *ngFor="let opt of easingOptions" [value]="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="card-heading">
+            <div>
+              <p class="card-eyebrow">Shape</p>
+              <h3>Taper and flow</h3>
+            </div>
+          </div>
+
+          <div class="two-column-grid">
+            <div class="mini-card">
+              <div class="mini-card-heading">
+                <span>Start</span>
+              </div>
+
+              <div class="control-row compact-control">
+                <div class="control-labels">
+                  <label>Taper</label>
+                  <span>{{ tools[activeTool].start.taper }}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="tools[activeTool].start.taper"
+                />
+              </div>
+
+              <div class="select-row compact-select">
+                <div class="control-labels">
+                  <label>Easing</label>
+                </div>
+                <select [(ngModel)]="tools[activeTool].start.easing">
+                  <option *ngFor="let opt of easingOptions" [value]="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <div class="mini-card-heading">
+                <span>End</span>
+              </div>
+
+              <div class="control-row compact-control">
+                <div class="control-labels">
+                  <label>Taper</label>
+                  <span>{{ tools[activeTool].end.taper }}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="tools[activeTool].end.taper"
+                />
+              </div>
+
+              <div class="select-row compact-select">
+                <div class="control-labels">
+                  <label>Easing</label>
+                </div>
+                <select [(ngModel)]="tools[activeTool].end.easing">
+                  <option *ngFor="let opt of easingOptions" [value]="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="card-heading">
+            <div>
+              <p class="card-eyebrow">Finish</p>
+              <h3>Color and outline</h3>
+            </div>
+          </div>
+
+          <div class="swatch-row">
+            <label class="swatch-card">
+              <span class="swatch-meta">
+                <span class="swatch-title">Fill</span>
+                <span class="swatch-subtitle">Main body color</span>
+              </span>
+              <span
+                class="swatch-preview"
+                [style.background]="tools[activeTool].color"
+              ></span>
+              <input type="color" [(ngModel)]="tools[activeTool].color" />
+            </label>
+
+            <label class="swatch-card">
+              <span class="swatch-meta">
+                <span class="swatch-title">Outline</span>
+                <span class="swatch-subtitle">Edge color</span>
+              </span>
+              <span
+                class="swatch-preview"
+                [style.background]="tools[activeTool].outline.color"
+              ></span>
+              <input
+                type="color"
+                [(ngModel)]="tools[activeTool].outline.color"
+              />
+            </label>
+          </div>
+
+          <div class="control-row">
+            <div class="control-labels">
+              <label>Outline width</label>
+              <span>{{ tools[activeTool].outline.width }}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              [(ngModel)]="tools[activeTool].outline.width"
+            />
+          </div>
+        </section>
+      </ng-container>
+
+      <ng-template #eraserControls>
+        <section class="settings-card">
+          <div class="card-heading">
+            <div>
+              <p class="card-eyebrow">Eraser</p>
+              <h3>Precision</h3>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <div class="control-labels">
+              <label>Size</label>
+              <span>{{ tools.eraser.size }}</span>
+            </div>
+            <input type="range" min="8" max="120" [(ngModel)]="tools.eraser.size" />
+          </div>
+
+          <p class="eraser-note">
+            Larger sizes remove strokes faster. Smaller sizes give you more
+            control around details.
+          </p>
+        </section>
+      </ng-template>
+    </div>
+  </aside>
 
   <svg
     #svgElement
-    class="w-full h-full bg-white touch-none"
+    class="drawing-canvas"
     (pointerdown)="onPointerDown($event)"
     (pointermove)="onPointerMove($event)"
     (pointerup)="onPointerUp()"

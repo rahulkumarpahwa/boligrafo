@@ -24,48 +24,7 @@ import { getSvgPathFromStroke } from '../utils/getSvgPathFromStroke';
 @Component({
   selector: 'app-drawing',
   templateUrl: './drawing.component.html',
-  styles: [
-    `/* Responsive styles for the settings dropdown (hamburger menu) */
-    .settings-panel {
-      width: 18.5rem;
-      box-sizing: border-box;
-      z-index: 9999;
-      max-height: 90vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* On small screens make the panel full-width and pinned to top */
-    @media (max-width: 640px) {
-      .settings-panel {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-        max-height: 60vh !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-    }
-
-    /* On medium screens, constrain width and center */
-    @media (min-width: 641px) and (max-width: 1024px) {
-      .settings-panel {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0.5rem !important;
-        width: calc(100% - 1rem) !important;
-        max-width: 22rem;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-      }
-    }
-    `
-  ],
+  styleUrls: ['./drawing.component.css'],
 })
 export class DrawingComponent {
   @ViewChild('svgElement') svgElement!: ElementRef<SVGElement>;
@@ -81,6 +40,43 @@ export class DrawingComponent {
     label: key,
     value: key,
   }));
+
+  toolOptions: Array<{
+    key: 'pen1' | 'pen2' | 'highlighter' | 'eraser';
+    label: string;
+    icon: string;
+    accent: string;
+    description: string;
+  }> = [
+    {
+      key: 'pen1',
+      label: 'Pen 1',
+      icon: 'assets/pen1.svg',
+      accent: '#eb454a',
+      description: 'Smooth expressive stroke',
+    },
+    {
+      key: 'pen2',
+      label: 'Pen 2',
+      icon: 'assets/pen2.svg',
+      accent: '#3b82f6',
+      description: 'Sharper controlled stroke',
+    },
+    {
+      key: 'highlighter',
+      label: 'Highlighter',
+      icon: 'assets/pen3.svg',
+      accent: '#ffb400',
+      description: 'Soft translucent marker',
+    },
+    {
+      key: 'eraser',
+      label: 'Eraser',
+      icon: 'assets/eraser.svg',
+      accent: '#ff7a93',
+      description: 'Clean stroke removal',
+    },
+  ];
 
   tools: any = {
     pen1: getDefaultToolPen1('#eb454a', 16),
@@ -121,6 +117,14 @@ export class DrawingComponent {
 
   toggleSettings() {
     this.showSettings = !this.showSettings;
+  }
+
+  selectTool(tool: 'pen1' | 'pen2' | 'highlighter' | 'eraser') {
+    this.activeTool = tool;
+  }
+
+  get activeToolMeta() {
+    return this.toolOptions.find((tool) => tool.key === this.activeTool);
   }
 
   resetPenSettings() {
